@@ -1,7 +1,6 @@
 <div align="center">
-  <img src="https://github.com/user-attachments/assets/8c9b1877-5803-4c2a-a4ce-f22d5c1a2445" alt="ceye" width="500">
+  <img src="https://github.com/user-attachments/assets/39d6e99e-8281-4f48-811b-14478f25be99" alt="crtmon" width="800">
 </div>
-
 
 <br>
 <br>
@@ -39,7 +38,7 @@ crtmon
 - <sub>**edit the generated config file at `~/.config/crtmon/provider.yaml`**</sub>
 
 <div align="center">
-  <img width="800" height="800" alt="image" src="https://github.com/user-attachments/assets/0e73cc08-46ec-4aa7-9da0-cf8e5fa0cf68" />
+  <img width="800" height="800" alt="provider" src="https://github.com/user-attachments/assets/183cb7ab-6e52-40c8-9362-118bf97a0c84" />
 </div>
 
 <br>
@@ -57,10 +56,8 @@ crtmon
 </pre>
 
 <div align="center">
-  <!-- <img alt="help" src="https://github.com/user-attachments/assets/957f6a89-08e2-4943-b0de-cf7296997ec6" /> -->
-  <img alt="help" src="https://github.com/user-attachments/assets/a2302e5a-9024-48f7-935c-2e8465dd6aa0" />
+  <img width="1000" height="1000" alt="help" src="https://github.com/user-attachments/assets/1209cd79-b52d-4aef-84c6-bccfc4fa3837" />
 </div>
-
 
 <br>
 <br>
