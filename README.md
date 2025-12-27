@@ -103,16 +103,6 @@ echo -e "tesla.com\nuber.com\nmeta.com" | crtmon -target - -notify=both
 ```
 
 <br>
-
-<!-- ```bash
-# integrate with active recon workflows: monitor while scanning
-crtmon -target github.com &
-MONITOR_PID=$!
-subfinder -d github.com -all | httpx -silent -mc 200
-kill $MONITOR_PID
-``` -->
-
-<br>
 <br>
 
 - **If you see no results or errors**
