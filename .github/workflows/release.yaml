@@ -1,0 +1,173 @@
+name: Build and Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'version (1.2.3) or empty for auto +1'
+        required: false
+        type: string
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - id: version
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+            LATEST_VERSION=${LATEST_TAG#v}
+            IFS='.' read -r -a VERSION_PARTS <<< "$LATEST_VERSION"
+            MAJOR=${VERSION_PARTS[0]:-0}
+            MINOR=${VERSION_PARTS[1]:-0}
+            PATCH=${VERSION_PARTS[2]:-0}
+            PATCH=$((PATCH + 1))
+            VERSION="$MAJOR.$MINOR.$PATCH"
+          fi
+          
+          if ! [[ $VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Invalid version format"
+            exit 1
+          fi
+          
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag=v$VERSION" >> $GITHUB_OUTPUT
+
+  build:
+    needs: prepare
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - goos: linux
+            goarch: amd64
+            output: crtmon-linux-amd64
+          - goos: linux
+            goarch: arm64
+            output: crtmon-linux-arm64
+          - goos: darwin
+            goarch: amd64
+            output: crtmon-darwin-amd64
+          - goos: darwin
+            goarch: arm64
+            output: crtmon-darwin-arm64
+          - goos: windows
+            goarch: amd64
+            output: crtmon-windows-amd64.exe
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
+      - run: sed -i 's/const version = ".*"/const version = "${{ needs.prepare.outputs.version }}"/' main.go
+
+      - name: build
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: 0
+        run: go build -ldflags="-s -w" -o ${{ matrix.output }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.output }}
+          path: ${{ matrix.output }}
+          retention-days: 1
+
+  release:
+    needs: [prepare, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - run: |
+          mkdir -p release
+          find artifacts -type f -exec mv {} release/ \;
+          chmod +x release/crtmon-* 2>/dev/null || true
+
+      - run: sha256sum release/crtmon-* > release/checksums.txt
+
+      - run: sed -i 's/const version = ".*"/const version = "${{ needs.prepare.outputs.version }}"/' main.go
+
+      - name: commit
+        run: |
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git add main.go
+          git diff --staged --quiet || git commit -m "v${{ needs.prepare.outputs.version }}"
+          git tag -a ${{ needs.prepare.outputs.tag }} -m "v${{ needs.prepare.outputs.version }}"
+
+      - uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.ref }}
+          tags: true
+
+      - name: notes
+        run: |
+          PREV_TAG=$(git describe --tags --abbrev=0 ${{ needs.prepare.outputs.tag }}^ 2>/dev/null || echo "")
+          CHANGELOG=$(git log $PREV_TAG..${{ needs.prepare.outputs.tag }} --pretty=format:"- %s" --no-merges 2>/dev/null || echo "Initial release")
+          
+          cat << EOF > release_notes.md
+          ## Changelog
+          $CHANGELOG
+          
+          ## Installation
+          
+          Download the appropriate binary for your platform:
+          
+          - **Linux AMD64**: \`crtmon-linux-amd64\`
+          - **Linux ARM64**: \`crtmon-linux-arm64\`
+          - **macOS Intel**: \`crtmon-darwin-amd64\`
+          - **macOS Apple Silicon**: \`crtmon-darwin-arm64\`
+          - **Windows**: \`crtmon-windows-amd64.exe\`
+          
+          Make it executable (Unix):
+          \`\`\`bash
+          chmod +x crtmon-*
+          sudo mv crtmon-* /usr/local/bin/crtmon
+          \`\`\`
+          
+          ## Checksums
+          \`\`\`
+          $(cat release/checksums.txt)
+          \`\`\`
+          EOF
+
+      - uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ needs.prepare.outputs.tag }}
+          name: crtmon ${{ needs.prepare.outputs.tag }}
+          body_path: release_notes.md
+          draft: false
+          prerelease: false
+          files: |
+            release/crtmon-linux-amd64
+            release/crtmon-linux-arm64
+            release/crtmon-darwin-amd64
+            release/crtmon-darwin-arm64
+            release/crtmon-windows-amd64.exe
+            release/checksums.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - run: echo "https://github.com/${{ github.repository }}/releases/tag/${{ needs.prepare.outputs.tag }}" >> $GITHUB_STEP_SUMMARY
