@@ -5,7 +5,6 @@
 
 **crtmon** is a lightweight Certificate Transparency monitoring tool that discovers new subdomains in real time as soon as they appear.
 
----
 
 ##  Features
 
