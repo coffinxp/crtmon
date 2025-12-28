@@ -1,0 +1,21 @@
+{
+  "window": false,
+  "border": {
+    "radius": 8,
+    "width": 3,
+    "color": "#515151"
+  },
+  "shadow": {
+    "blur": 20,
+    "x": 0,
+    "y": 10
+  },
+  "padding": [20, 40],
+  "margin": "30",
+  "background": "#171617",
+  "font": {
+    "family": "SF Mono",
+    "size": 12,
+    "ligatures": true
+  }
+}
