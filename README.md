@@ -140,4 +140,4 @@ echo "@reboot nohup crtmon -target github.com > /tmp/crtmon.log 2>&1 &" | cronta
 
 > [!CAUTION]
 > **Use crtmon only on assets you own or have permission to test.
-The authors are not responsible for misuse..**
+The authors are not responsible for misuse...**
