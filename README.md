@@ -25,7 +25,7 @@
 ###  Installation
 
 ```bash
-go install github.com/coffinxp/crtmon@latest
+go install github.com/coffinxp/crtmon@main
 ```
 
 </br>
