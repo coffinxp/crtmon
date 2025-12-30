@@ -32,7 +32,7 @@
 ###  Installation
 
 ```bash
-go install github.com/coffinxp/crtmon@main
+go install github.com/coffinxp/crtmon@latest
 ```
 
 </br>
