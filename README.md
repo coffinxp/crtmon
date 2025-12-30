@@ -6,6 +6,15 @@
 </br>
 </br>
 
+
+> [!CAUTION]
+> **The tool is currently not working on some operating systems. We are working on a fix, and it should be updated by the end of the day. Sorry for the inconvenience.**
+
+
+
+</br>
+</br>
+
 > [!NOTE]
 > **crtmon** is a lightweight Certificate Transparency monitoring tool that discovers new subdomains in real time as soon as they appear.
 
