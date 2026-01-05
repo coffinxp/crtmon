@@ -1,6 +1,3 @@
-> [!CAUTION]
-> **The latest version currently has a known issue. Please use version 1.0.0 for now. We are actively working on a fix and will release an update soon. Sorry for the inconvenience, and thanks for your patience.**
-
 <p align="center">
   <img src="https://github.com/user-attachments/assets/39d6e99e-8281-4f48-811b-14478f25be99" alt="crtmon" width="600">
   <img width="500" height="200" alt="credit" src="https://github.com/user-attachments/assets/23cc637e-0294-4eef-bc8e-ba8515b6f689" />
