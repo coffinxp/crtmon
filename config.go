@@ -12,6 +12,7 @@ type Config struct {
 	Webhook          string   `yaml:"webhook"`
 	TelegramBotToken string   `yaml:"telegram_bot_token"`
 	TelegramChatID   string   `yaml:"telegram_chat_id"`
+	NtfyURL          string   `yaml:"ntfy_url"`
 	Targets          []string `yaml:"targets"`
 }
 
@@ -61,6 +62,9 @@ webhook: ""
 telegram_bot_token: ""
 telegram_chat_id: ""
 
+# ntfy topic URL for notifications (optional)
+ntfy_url: ""
+
 # target wildcard to monitor
 targets:
 `
@@ -101,12 +105,18 @@ func configExists() bool {
 }
 
 func validateConfig(cfg *Config) error {
-	if cfg.Webhook == "" || cfg.Webhook == `""` {
-		return fmt.Errorf("webhook not configured. please add your discord webhook url to ~/.config/crtmon/provider.yaml")
-	}
+	discordConfigured := cfg.Webhook != "" && cfg.Webhook != `""`
+	telegramConfigured := cfg.TelegramBotToken != "" && cfg.TelegramChatID != "" && cfg.TelegramBotToken != `""` && cfg.TelegramChatID != `""`
+	ntfyConfigured := cfg.NtfyURL != "" && cfg.NtfyURL != `""`
+
 	if len(cfg.Targets) == 0 {
 		return fmt.Errorf("no targets configured. please add target domains to ~/.config/crtmon/provider.yaml")
 	}
+
+	if !discordConfigured && !telegramConfigured && !ntfyConfigured {
+		return fmt.Errorf("no notification provider configured. please configure discord webhook, telegram bot, or ntfy topic url in ~/.config/crtmon/provider.yaml")
+	}
+
 	return nil
 }
 
@@ -135,4 +145,3 @@ func updateWebhook(newWebhook string) error {
 
 	return os.WriteFile(configPath, newData, 0644)
 }
-

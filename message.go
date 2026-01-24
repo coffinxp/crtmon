@@ -30,3 +30,8 @@ func buildTelegramMessage(target string, domains []string) string {
 	domainList := strings.Join(domains, "\n")
 	return fmt.Sprintf("*%s* [%d]\n```%s```", target, len(domains), domainList)
 }
+
+func buildNtfyMessage(target string, domains []string) string {
+	domainList := strings.Join(domains, "\n")
+	return fmt.Sprintf("%s [%d]\n%s", target, len(domains), domainList)
+}

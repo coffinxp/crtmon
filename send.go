@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 )
@@ -76,6 +77,10 @@ func (n *notificationBuffer) send(target string, domains []string) {
 
 	if notifyTelegram {
 		sendToTelegram(target, domains)
+	}
+
+	if notifyNtfy && ntfyURL != "" {
+		n.sendNtfy(target, domains)
 	}
 }
 
@@ -161,4 +166,34 @@ func sendToTelegram(target string, domains []string) {
 	}
 
 	logger.Error("failed to send telegram after retries", "target", target)
+}
+
+func (n *notificationBuffer) sendNtfy(target string, domains []string) {
+	message := buildNtfyMessage(target, domains)
+
+	for attempt := 0; attempt < maxRetries; attempt++ {
+		resp, err := http.Post(ntfyURL, "text/plain", strings.NewReader(message))
+		if err != nil {
+			logger.Error("failed to send ntfy notification", "error", err)
+			return
+		}
+
+		if resp.StatusCode >= 200 && resp.StatusCode < 300 {
+			resp.Body.Close()
+			return
+		}
+
+		if resp.StatusCode == http.StatusTooManyRequests {
+			resp.Body.Close()
+			logger.Warn("ntfy rate limited, waiting", "attempt", attempt+1)
+			time.Sleep(rateLimitWait * time.Duration(attempt+1))
+			continue
+		}
+
+		resp.Body.Close()
+		logger.Warn("ntfy send error", "status", resp.StatusCode)
+		return
+	}
+
+	logger.Error("failed to send ntfy after retries", "target", target)
 }

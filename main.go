@@ -16,23 +16,25 @@ import (
 )
 
 var (
-	target      = flag.String("target", "", "target domain to monitor")
-	scope       = flag.String("scope", "", "scope keyword to filter subdomains")
-	configPath  = flag.String("config", "", "path to configuration file")
-	notify      = flag.String("notify", "", "notification provider: discord, telegram, both")
-	jsonOutput  = flag.Bool("json", false, "output raw JSON format to stdout")
-	showVersion = flag.Bool("version", false, "show version")
-	update      = flag.Bool("update", false, "update to latest version")
-	showHelp    = flag.Bool("h", false, "show help")
-	showHelp2   = flag.Bool("help", false, "show help")
-	logger *charmlog.Logger
+	target         = flag.String("target", "", "target domain to monitor")
+	scope          = flag.String("scope", "", "scope keyword to filter subdomains")
+	configPath     = flag.String("config", "", "path to configuration file")
+	notify         = flag.String("notify", "", "notification provider: discord, telegram, ntfy (comma-separated)")
+	jsonOutput     = flag.Bool("json", false, "output raw JSON format to stdout")
+	showVersion    = flag.Bool("version", false, "show version")
+	update         = flag.Bool("update", false, "update to latest version")
+	showHelp       = flag.Bool("h", false, "show help")
+	showHelp2      = flag.Bool("help", false, "show help")
+	logger         *charmlog.Logger
 	targets        []string
 	scopeFilter    string
 	webhookURL     string
 	telegramToken  string
 	telegramChatID string
+	ntfyURL        string
 	notifyDiscord  bool
 	notifyTelegram bool
+	notifyNtfy     bool
 )
 
 func main() {
@@ -58,14 +60,14 @@ func main() {
 
 	if len(os.Args) > 1 {
 		validFlags := map[string]bool{
-			"-target": true,
-			"-scope": true,
-			"-config": true,
-			"-notify": true,
-			"-json": true,
+			"-target":  true,
+			"-scope":   true,
+			"-config":  true,
+			"-notify":  true,
+			"-json":    true,
 			"-version": true,
-			"-update": true,
-			"-h": true, "-help": true,
+			"-update":  true,
+			"-h":       true, "-help": true,
 		}
 
 		for i, arg := range os.Args[1:] {
@@ -128,10 +130,12 @@ func main() {
 
 		telegramToken = strings.TrimSpace(cfg.TelegramBotToken)
 		telegramChatID = strings.TrimSpace(cfg.TelegramChatID)
+		ntfyURL = strings.TrimSpace(cfg.NtfyURL)
 	} else {
 		webhookURL = ""
 		telegramToken = ""
 		telegramChatID = ""
+		ntfyURL = ""
 		logger.Warn("no configuration file found. notifications will be disabled unless providers are configured")
 	}
 
@@ -178,24 +182,50 @@ func main() {
 
 	discordConfigured := webhookURL != ""
 	telegramConfigured := telegramToken != "" && telegramChatID != ""
+	ntfyConfigured := ntfyURL != ""
 
 	scopeFilter = strings.TrimSpace(*scope)
 
 	notifyValue := strings.ToLower(strings.TrimSpace(*notify))
-	switch notifyValue {
-	case "":
-	case "discord":
-		if !discordConfigured {
-			logger.Fatal("notify=discord selected but discord webhook is not configured. please configure it in your configuration file (use -config for a custom path)")
+	if notifyValue != "" {
+		parts := strings.Split(notifyValue, ",")
+		for _, raw := range parts {
+			provider := strings.TrimSpace(raw)
+			switch provider {
+			case "":
+				continue
+			case "discord":
+				if !discordConfigured {
+					logger.Fatal("notify=discord selected but discord webhook is not configured. please configure it in your configuration file (use -config for a custom path)")
+				}
+				notifyDiscord = true
+			case "telegram":
+				if !telegramConfigured {
+					logger.Fatal("notify=telegram selected but telegram bot token/chat id are not configured. please configure them in your configuration file (use -config for a custom path)")
+				}
+				notifyTelegram = true
+			case "ntfy":
+				if !ntfyConfigured {
+					logger.Fatal("notify=ntfy selected but ntfy topic url is not configured. please configure it in your configuration file (use -config for a custom path)")
+				}
+				notifyNtfy = true
+			case "both":
+				if !discordConfigured || !telegramConfigured {
+					logger.Fatal("notify=both selected but discord webhook or telegram credentials are not configured. please configure them in your configuration file (use -config for a custom path)")
+				}
+				notifyDiscord = true
+				notifyTelegram = true
+			case "all":
+				if !discordConfigured || !telegramConfigured || !ntfyConfigured {
+					logger.Fatal("notify=all selected but one or more providers are not configured. please configure discord, telegram, and ntfy in your configuration file (use -config for a custom path)")
+				}
+				notifyDiscord = true
+				notifyTelegram = true
+				notifyNtfy = true
+			default:
+				logger.Fatal("invalid value for -notify. valid options are: discord, telegram, ntfy, both, all, or comma-separated combinations")
+			}
 		}
-		notifyDiscord = true
-	case "telegram":
-		if !telegramConfigured {
-			logger.Fatal("notify=telegram selected but telegram bot token/chat id are not configured. please configure them in your configuration file (use -config for a custom path)")
-		}
-		notifyTelegram = true
-	default:
-		logger.Fatal("invalid value for -notify. valid options are: discord, telegram")
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -216,14 +246,20 @@ func main() {
 	}
 
 	var notifyStatus string
-	if notifyDiscord && notifyTelegram {
-		notifyStatus = "discord, telegram"
-	} else if notifyDiscord {
-		notifyStatus = "discord"
-	} else if notifyTelegram {
-		notifyStatus = "telegram"
-	} else {
+	providers := []string{}
+	if notifyDiscord {
+		providers = append(providers, "discord")
+	}
+	if notifyTelegram {
+		providers = append(providers, "telegram")
+	}
+	if notifyNtfy {
+		providers = append(providers, "ntfy")
+	}
+	if len(providers) == 0 {
 		notifyStatus = "off"
+	} else {
+		notifyStatus = strings.Join(providers, ", ")
 	}
 	logger.Debug("configuration", "targets", len(targets), "notification", notifyStatus)
 
@@ -302,7 +338,7 @@ func processEntry(entry CertEntry) {
 				} else {
 					logger.Info("new subdomain", "domain", domain, "target", target)
 				}
-				if notifyDiscord || notifyTelegram {
+				if notifyDiscord || notifyTelegram || notifyNtfy {
 					go sendToDiscord(domain, target)
 				}
 			}

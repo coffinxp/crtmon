@@ -12,7 +12,7 @@
 ###  Features
 
 * Real-time subdomain discovery from CT logs
-* Discord and Telegram notifications
+* Discord, Telegram, and ntfy notifications
 * Smart batching with built-in rate limiting
 * Supports single targets, files, and stdin
 
@@ -42,6 +42,8 @@ Edit the generated file:
 ~/.config/crtmon/provider.yaml
 ```
 
+Populate `ntfy_url` with your topic endpoint (for example, `https://ntfy.sh/mytopic`) to enable ntfy notifications.
+
 <p align="center">
   <img src="https://github.com/user-attachments/assets/183cb7ab-6e52-40c8-9362-118bf97a0c84" alt="provider" width="800">
 </p>
@@ -54,7 +56,7 @@ Edit the generated file:
 ```text
 -target    target domain, file path, or '-' for stdin
 -config    path to configuration file (default: ~/.config/crtmon/provider.yaml)
--notify    notification provider: discord, telegram, both
+-notify    notification provider: discord, telegram, ntfy (comma-separated)
 -version   show version
 -update    update to latest version
 -h, -help  show help message
@@ -103,6 +105,12 @@ crtmon -target github.com -notify telegram
 
 ```bash
 echo -e "tesla.com\nuber.com\nmeta.com" | crtmon -target - -notify both
+```
+
+- ###### Use ntfy notifications
+
+```bash
+crtmon -target github.com -notify ntfy
 ```
 
 - ###### Start on system reboot (cron)
