@@ -26,7 +26,7 @@ func displayHelp() {
 	printBanner()
 	fmt.Println(successStyle.Render(" usage:"))
 	fmt.Printf("    %s domains.txt | %s -target -\n", cmdStyle.Render("cat"), cmdStyle.Render("crtmon"))
-	fmt.Printf("    %s -target %s -config %s -notify=%s\n", cmdStyle.Render("crtmon"), argStyle.Render("example.com"), argStyle.Render("custom.yaml"), argStyle.Render("discord"))
+	fmt.Printf("    %s -target %s -config %s -notify=%s\n", cmdStyle.Render("crtmon"), argStyle.Render("example.com"), argStyle.Render("custom.yaml"), argStyle.Render("discord,ntfy"))
 	fmt.Printf("    %s -target %s\n", cmdStyle.Render("crtmon"), argStyle.Render("domains.txt"))
 	fmt.Printf("    %s \"@reboot %s %s -target %s > /tmp/crtmon.log 2>&1 &\" | %s -\n\n", cmdStyle.Render("echo"), cmdStyle.Render("nohup"), cmdStyle.Render("crtmon"), argStyle.Render("example.com"), cmdStyle.Render("crontab"))
 
@@ -37,7 +37,7 @@ func displayHelp() {
 	fmt.Printf("                   stdin: %s\n", argStyle.Render("-target -"))
 	fmt.Printf("    %s       scope keyword to filter subdomains\n", flagStyle.Render("-scope"))
 	fmt.Printf("    %s      path to configuration file (default: ~/.config/crtmon/provider.yaml)\n", flagStyle.Render("-config"))
-	fmt.Printf("    %s      notification provider: discord, telegram, both\n", flagStyle.Render("-notify"))
+	fmt.Printf("    %s      notification provider: discord, telegram, ntfy (comma-separated; both/all)\n", flagStyle.Render("-notify"))
 	fmt.Printf("    %s        output results in JSON format (suppresses all other output)\n", flagStyle.Render("-json"))
 	fmt.Printf("    %s     show version\n", flagStyle.Render("-version"))
 	fmt.Printf("    %s      update to latest version\n", flagStyle.Render("-update"))
