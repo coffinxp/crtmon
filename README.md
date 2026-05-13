@@ -55,6 +55,7 @@ Edit the generated file:
 -target    target domain, file path, or '-' for stdin
 -config    path to configuration file (default: ~/.config/crtmon/provider.yaml)
 -notify    notification provider: discord, telegram, both
+-o         output file path; matched subdomains are appended line by line
 -version   show version
 -update    update to latest version
 -h, -help  show help message
