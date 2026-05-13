@@ -16,16 +16,17 @@ import (
 )
 
 var (
-	target      = flag.String("target", "", "target domain to monitor")
-	scope       = flag.String("scope", "", "scope keyword to filter subdomains")
-	configPath  = flag.String("config", "", "path to configuration file")
-	notify      = flag.String("notify", "", "notification provider: discord, telegram, both")
-	jsonOutput  = flag.Bool("json", false, "output raw JSON format to stdout")
-	showVersion = flag.Bool("version", false, "show version")
-	update      = flag.Bool("update", false, "update to latest version")
-	showHelp    = flag.Bool("h", false, "show help")
-	showHelp2   = flag.Bool("help", false, "show help")
-	logger *charmlog.Logger
+	target         = flag.String("target", "", "target domain to monitor")
+	scope          = flag.String("scope", "", "scope keyword to filter subdomains")
+	configPath     = flag.String("config", "", "path to configuration file")
+	notify         = flag.String("notify", "", "notification provider: discord, telegram, both")
+	jsonOutput     = flag.Bool("json", false, "output raw JSON format to stdout")
+	showVersion    = flag.Bool("version", false, "show version")
+	update         = flag.Bool("update", false, "update to latest version")
+	showHelp       = flag.Bool("h", false, "show help")
+	showHelp2      = flag.Bool("help", false, "show help")
+	outputPath     = flag.String("o", "", "output file path (append mode)")
+	logger         *charmlog.Logger
 	targets        []string
 	scopeFilter    string
 	webhookURL     string
@@ -58,14 +59,15 @@ func main() {
 
 	if len(os.Args) > 1 {
 		validFlags := map[string]bool{
-			"-target": true,
-			"-scope": true,
-			"-config": true,
-			"-notify": true,
-			"-json": true,
+			"-target":  true,
+			"-scope":   true,
+			"-config":  true,
+			"-notify":  true,
+			"-json":    true,
 			"-version": true,
-			"-update": true,
-			"-h": true, "-help": true,
+			"-update":  true,
+			"-h":       true, "-help": true,
+			"-o": true,
 		}
 
 		for i, arg := range os.Args[1:] {
@@ -227,6 +229,16 @@ func main() {
 	}
 	logger.Debug("configuration", "targets", len(targets), "notification", notifyStatus)
 
+	// --- OUTPUT FILE INIT (new) ---
+	if *outputPath != "" {
+		if err := initOutputFile(*outputPath); err != nil {
+			logger.Fatal("failed to open output file", "path", *outputPath, "error", err)
+		}
+		logger.Info("output file opened", "path", *outputPath, "mode", "append")
+		defer closeOutputFile()
+	}
+	// --- END OUTPUT FILE INIT ---
+
 	logger.Info("connecting to certificate transparency logs")
 
 	stream := CertStreamEventStream()
@@ -302,6 +314,9 @@ func processEntry(entry CertEntry) {
 				} else {
 					logger.Info("new subdomain", "domain", domain, "target", target)
 				}
+
+				writeToOutputFile(domain, target) // always runs, independent of -json flag
+
 				if notifyDiscord || notifyTelegram {
 					go sendToDiscord(domain, target)
 				}

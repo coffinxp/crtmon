@@ -39,6 +39,7 @@ func displayHelp() {
 	fmt.Printf("    %s      path to configuration file (default: ~/.config/crtmon/provider.yaml)\n", flagStyle.Render("-config"))
 	fmt.Printf("    %s      notification provider: discord, telegram, both\n", flagStyle.Render("-notify"))
 	fmt.Printf("    %s        output results in JSON format (suppresses all other output)\n", flagStyle.Render("-json"))
+	fmt.Printf("    %s           output file path; matched subdomains are appended line by line\n", flagStyle.Render("-o"))
 	fmt.Printf("    %s     show version\n", flagStyle.Render("-version"))
 	fmt.Printf("    %s      update to latest version\n", flagStyle.Render("-update"))
 	fmt.Printf("    %s    show this help message\n\n", flagStyle.Render("-h, -help"))
