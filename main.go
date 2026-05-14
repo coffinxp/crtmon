@@ -305,7 +305,7 @@ func loadTargetsFromStdin() ([]string, error) {
 func processEntry(entry CertEntry) {
 	for _, domain := range entry.Domains {
 		for _, target := range targets {
-			if strings.Contains(strings.ToLower(domain), strings.ToLower(target)) {
+			if isDomainMatch(domain, target) {
 				if scopeFilter != "" && !strings.Contains(strings.ToLower(domain), strings.ToLower(scopeFilter)) {
 					continue
 				}
